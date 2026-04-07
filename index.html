@@ -3,27 +3,39 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Coffee Cup Saturation</title>
+    <title>咖啡馆饱和度实验程序</title>
     <style>
+        :root {
+            --primary-color: #d4a373;
+            --bg-dark: #121212;
+        }
+
         body {
             margin: 0;
-            background: #1a1a1a;
+            padding: 0;
+            background-color: var(--bg-dark);
+            color: white;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             display: flex;
             flex-direction: column;
             align-items: center;
+            justify-content: center;
             min-height: 100vh;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
         }
 
-        .container {
+        /* 实验容器：锁定比例防止位移 */
+        .experiment-container {
             position: relative;
             width: 90vw;
             max-width: 1000px;
-            margin-top: 5vh;
-            line-height: 0;
+            /* 关键：利用图片自然撑开高度，确保两者重叠 */
+            line-height: 0; 
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+            border-radius: 12px;
+            overflow: hidden;
         }
 
-        /* 基础样式：让两张图完全重合 */
+        /* 基础图层样式 */
         .layer {
             width: 100%;
             height: auto;
@@ -35,57 +47,80 @@
             z-index: 1;
         }
 
-        /* 咖啡杯图层 */
+        /* 咖啡杯图层：绝对定位在左上角，重叠在背景上 */
         .cup-layer {
             position: absolute;
             top: 0;
             left: 0;
             z-index: 2;
-            /* 关键：初始状态 */
+            /* 初始饱和度 */
             filter: saturate(100%);
-            pointer-events: none; /* 让鼠标事件穿透，如果背景有点击交互的话 */
+            /* 防止用户误拖拽杯子图片 */
+            user-select: none;
+            -webkit-user-drag: none;
         }
 
-        /* 控制条 */
+        /* 控制面板 */
         .controls {
-            margin-top: 20px;
-            padding: 20px;
-            background: rgba(255,255,255,0.1);
-            border-radius: 12px;
-            color: white;
+            margin-top: 40px;
+            padding: 30px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 16px;
+            backdrop-filter: blur(10px);
             text-align: center;
+            width: 80%;
+            max-width: 500px;
         }
 
+        .label-text {
+            font-size: 1.1em;
+            margin-bottom: 20px;
+            display: block;
+            letter-spacing: 1px;
+        }
+
+        /* 滑动条样式自定义 */
         input[type=range] {
-            width: 250px;
-            margin: 0 15px;
-            vertical-align: middle;
+            width: 100%;
+            cursor: pointer;
+            accent-color: var(--primary-color);
+        }
+
+        .value-display {
+            margin-top: 15px;
+            font-weight: bold;
+            color: var(--primary-color);
+            font-size: 1.3em;
         }
     </style>
 </head>
 <body>
 
-    <div class="container">
-        <img src="Coffee_Me.png" class="layer background-layer" alt="Cafe Background">
-        <img src="Coffee_Cup_Me.png" id="cup" class="layer cup-layer" alt="Coffee Cup">
+    <div class="experiment-container">
+        <img src="Cafe_Me.png" class="layer background-layer" alt="Cafe Interior">
+        <img src="Cup_Me.png" id="targetCup" class="layer cup-layer" alt="Coffee Cup">
     </div>
 
     <div class="controls">
-        <span>灰度</span>
-        <input type="range" id="sat-slider" min="0" max="300" value="100">
-        <span>超饱和</span>
-        <p>当前饱和度: <span id="val">100</span>%</p>
+        <label class="label-text">Please use the slider to adjust the saturation to your preferrence while enjoying ME-TIME</label>
+        <input type="range" id="satSlider" min="0" max="250" value="100">
+        <div class="value-display">Saturation: <span id="valLabel">100</span>%</div>
     </div>
 
     <script>
-        const slider = document.getElementById('sat-slider');
-        const cup = document.getElementById('cup');
-        const valDisplay = document.getElementById('val');
+        const slider = document.getElementById('satSlider');
+        const cup = document.getElementById('targetCup');
+        const label = document.getElementById('valLabel');
 
+        // 监听滑动事件
         slider.addEventListener('input', (e) => {
-            const v = e.target.value;
-            cup.style.filter = `saturate(${v}%)`;
-            valDisplay.textContent = v;
+            const saturationValue = e.target.value;
+            
+            // 应用滤镜到杯子
+            cup.style.filter = `saturate(${saturationValue}%)`;
+            
+            // 更新数值显示
+            label.textContent = saturationValue;
         });
     </script>
 </body>
