@@ -11,30 +11,24 @@
             --accent-blue: #3F85FA;
         }
 
-        body {
+        body, html {
             margin: 0;
             padding: 0;
+            width: 100%;
+            height: 100%;
             background-color: var(--bg-dark);
-            color: #d1d1d1;
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            min-height: 100vh;
+            overflow: hidden; /* 防止全屏滚动 */
         }
 
-        /* 场景容器 */
+        /* 场景容器：全屏铺满 */
         .scene-container {
-            position: relative;
-            width: 90vw;
-            max-width: 1024px;
-            aspect-ratio: 16 / 9; 
-            margin-top: 25px;
-            box-shadow: 0 20px 50px rgba(0,0,0,0.6);
-            border-radius: 12px;
-            overflow: hidden;
-            line-height: 0;
-            font-size: 0;
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 1;
         }
 
         /* 图层样式 */
@@ -44,7 +38,6 @@
             left: 0;
             width: 100%;
             height: 100%;
-            display: block;
             background-size: cover;
             background-position: center;
             background-repeat: no-repeat;
@@ -61,78 +54,72 @@
             z-index: 2;
         }
 
-        /* 控制面板 */
+        /* 悬浮控制面板：位于左下方 */
         .controls-panel {
-            margin-top: 40px;
-            width: 90vw;
-            max-width: 600px;
-            background: rgba(255, 255, 255, 0.03);
-            padding: 30px;
-            border-radius: 16px;
-            backdrop-filter: blur(10px);
+            position: absolute;
+            bottom: 40px;
+            left: 40px;
+            z-index: 10;
+            width: 300px; /* 调整了宽度，使其更精简 */
+            background: rgba(0, 0, 0, 0.6); /* 加深半透明背景以突出显示 */
+            padding: 20px;
+            border-radius: 12px;
+            backdrop-filter: blur(15px);
             box-sizing: border-box;
             display: flex;
             flex-direction: column;
-            align-items: center;
-            gap: 20px;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-        }
-
-        .label-text {
-            font-size: 1.1em;
-            margin-bottom: 10px;
-            display: block;
-            letter-spacing: 0.5px;
-            color: #b0b0b0;
-            text-align: center;
+            gap: 15px;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
         }
 
         .slider-container {
             display: flex;
             align-items: center;
-            gap: 15px;
+            gap: 12px;
             width: 100%;
+            color: #fff;
+            font-size: 14px;
         }
 
         input[type=range] {
             flex-grow: 1;
             cursor: pointer;
-            accent-color: var(--primary-color);
+            accent-color: var(--accent-blue);
+            height: 4px;
         }
 
         .value-display {
             font-family: monospace;
-            width: 60px;
+            min-width: 45px;
             text-align: right;
-            font-size: 1.2em;
-            color: var(--primary-color);
+            font-size: 1.1em;
+            color: #fff;
             font-weight: bold;
         }
 
         /* 提交按钮 */
         #submitBtn {
-            margin-top: 10px;
             width: 100%;
-            padding: 14px;
+            padding: 10px;
             border: none;
-            border-radius: 10px;
+            border-radius: 6px;
             background: var(--accent-blue);
             color: white;
-            font-size: 16px;
+            font-size: 14px;
             cursor: pointer;
             font-weight: bold;
-            transition: all 0.3s;
+            transition: all 0.2s;
         }
 
         #submitBtn:hover {
             background: #2b73e6;
-            transform: translateY(-2px);
         }
 
         #submitBtn:disabled {
-            background: #555;
+            background: #444;
+            color: #888;
             cursor: not-allowed;
-            transform: none;
         }
 
         /* 成功提示 */
@@ -162,8 +149,6 @@
     </div>
 
     <div class="controls-panel">
-        <label class="label-text" for="saturationSlider">Please use the slider to adjust the colour until it fits your preference.</label>
-        
         <div class="slider-container">
             <span>Low</span>
             <input type="range" id="saturationSlider" min="0" max="100" value="50">
@@ -181,26 +166,33 @@
         const submitBtn = document.getElementById('submitBtn');
         const toast = document.getElementById('successToast');
 
-        // 1. 监听滑块实时调节透明度
+        // 初始化透明度
+        lowSatLayer.style.opacity = 0.5;
+
+        // 监听滑块
         saturationSlider.addEventListener('input', (e) => {
             const saturationPercent = e.target.value; 
+            // 饱和度越高，低饱和图层越透明
             const opacityValue = 1 - (saturationPercent / 100);
             lowSatLayer.style.opacity = opacityValue;
             satValueDisplay.textContent = saturationPercent;
         });
 
-        // 2. 数据回传 Credamo 核心逻辑
+        // 提交逻辑
         submitBtn.onclick = function() {
             const saturationVal = (saturationSlider.value / 100).toFixed(3);
             
-            window.parent.postMessage({
-                type: 'saturation_update',
-                saturation: saturationVal
-            }, "*"); 
+            // 发送数据给 Credamo
+            if (window.parent) {
+                window.parent.postMessage({
+                    type: 'saturation_update',
+                    saturation: saturationVal
+                }, "*");
+            }
 
+            // UI 反馈
             toast.style.display = "block";
             submitBtn.innerText = "Selected";
-            submitBtn.style.background = "#555";
             submitBtn.disabled = true;
             saturationSlider.disabled = true; 
             
@@ -208,9 +200,6 @@
                 toast.style.display = "none"; 
             }, 3000);
         };
-
-        // 修改点：初始化时根据 0.5 的滑块位置计算透明度 (1 - 0.5 = 0.5)
-        lowSatLayer.style.opacity = 0.5;
     </script>
 </body>
 </html>
