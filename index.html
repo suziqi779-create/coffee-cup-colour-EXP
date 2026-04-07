@@ -59,7 +59,6 @@
         .layer-low-sat {
             background-image: url('cup_low.png');
             z-index: 2;
-            opacity: 1; 
         }
 
         /* 控制面板 */
@@ -167,9 +166,9 @@
         
         <div class="slider-container">
             <span>Low</span>
-            <input type="range" id="saturationSlider" min="0" max="100" value="0">
+            <input type="range" id="saturationSlider" min="0" max="100" value="50">
             <span>High</span>
-            <span class="value-display"><span id="satValue">0</span>%</span>
+            <span class="value-display"><span id="satValue">50</span>%</span>
         </div>
 
         <button id="submitBtn">Confirm selection</button>
@@ -185,8 +184,6 @@
         // 1. 监听滑块实时调节透明度
         saturationSlider.addEventListener('input', (e) => {
             const saturationPercent = e.target.value; 
-            // 0% (Low) 时透明度为 1 (完全显示低饱和图)
-            // 100% (High) 时透明度为 0 (完全露出高饱和图)
             const opacityValue = 1 - (saturationPercent / 100);
             lowSatLayer.style.opacity = opacityValue;
             satValueDisplay.textContent = saturationPercent;
@@ -194,29 +191,26 @@
 
         // 2. 数据回传 Credamo 核心逻辑
         submitBtn.onclick = function() {
-            // 将 0-100 转换为 0.000-1.000 格式
             const saturationVal = (saturationSlider.value / 100).toFixed(3);
             
-            // 向父窗口发送数据
             window.parent.postMessage({
                 type: 'saturation_update',
                 saturation: saturationVal
             }, "*"); 
 
-            // UI 交互反馈
             toast.style.display = "block";
             submitBtn.innerText = "Selected";
             submitBtn.style.background = "#555";
             submitBtn.disabled = true;
-            saturationSlider.disabled = true; // 提交后锁定滑块
+            saturationSlider.disabled = true; 
             
             setTimeout(() => { 
                 toast.style.display = "none"; 
             }, 3000);
         };
 
-        // 初始化
-        lowSatLayer.style.opacity = 1;
+        // 修改点：初始化时根据 0.5 的滑块位置计算透明度 (1 - 0.5 = 0.5)
+        lowSatLayer.style.opacity = 0.5;
     </script>
 </body>
 </html>
