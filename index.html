@@ -3,50 +3,50 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>咖啡馆饱和度实验程序 V2</title>
+    <title>Coffee Saturation Study</title>
     <style>
         :root {
-            /* 初始化：红色，中等饱和度 */
-            --current-hue: 0; 
-            --current-saturation: 50; 
+            --current-hue: 0;
+            --current-saturation: 50;
         }
 
         body {
             margin: 0;
             padding: 0;
             background-color: #121212;
-            color: #e0e0e0;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            color: white;
             display: flex;
             flex-direction: column;
             align-items: center;
             min-height: 100vh;
+            font-family: sans-serif;
         }
 
-        /* 场景容器，锁定比例 */
+        /* 实验场景容器 */
         .scene-container {
             position: relative;
             width: 90vw;
             max-width: 1000px;
-            aspect-ratio: 16 / 9; /* 强制容器比例与你的背景图一致 */
             margin-top: 20px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-            overflow: hidden;
-            border-radius: 8px;
+            /* 关键：消除图片底部的微小空隙 */
+            line-height: 0; 
+            font-size: 0;
         }
 
-        /* 1. 底层：咖啡馆彩色背景 */
-        .base-background {
-            position: absolute;
+        /* 基础图层统一样式 */
+        .layer {
             width: 100%;
-            height: 100%;
-            background-image: url('Cafe_Me.png'); /* 替换为你的彩色背景 */
-            background-size: cover;
-            background-position: center;
+            height: auto;
+            /* 关键：防止图片被视为文字导致行高偏移 */
+            display: block; 
+        }
+
+        /* 1. 底层：背景 */
+        .base-background {
             z-index: 1;
         }
 
-        /* 2. 中层：颜色层 (只覆盖杯子区域) */
+        /* 2. 中层：动态颜色层 */
         .cup-color-layer {
             position: absolute;
             top: 0;
@@ -54,18 +54,15 @@
             width: 100%;
             height: 100%;
             z-index: 2;
-            
-            /* 动态颜色：使用 HSL 保持明度在 50% */
             background-color: hsl(var(--current-hue), calc(var(--current-saturation) * 1%), 50%);
-            
-            /* 关键：使用灰度杯子图作为蒙版，颜色只显示在杯子上 */
-            -webkit-mask-image: url('Cup_Me.png'); /* 替换为你的灰度杯子 */
-            -webkit-mask-size: cover;
+            /* 使用杯子图作为蒙版 */
+            -webkit-mask-image: url('Cup_Me.png');
+            -webkit-mask-size: 100% 100%;
             mask-image: url('Cup_Me.png');
-            mask-size: cover;
+            mask-size: 100% 100%;
         }
 
-        /* 3. 顶层：灰度杯子 (提供纹理和阴影) */
+        /* 3. 顶层：灰度纹理 */
         .cup-texture-layer {
             position: absolute;
             top: 0;
@@ -73,145 +70,78 @@
             width: 100%;
             height: 100%;
             z-index: 3;
-            background-image: url('Cup_Me.png'); /* 替换为你的灰度杯子 */
-            background-size: cover;
-            
-            /* 关键混合模式：将黑白阴影和高光“印”在颜色上，保留写实感 */
-            mix-blend-mode: multiply; 
+            background-image: url('Cup_Me.png');
+            background-size: 100% 100%;
+            /* 混合模式保留写实阴影 */
+            mix-blend-mode: multiply;
+            pointer-events: none;
         }
 
-        /* 控制面板样式 */
+        /* 控制面板 */
         .controls-panel {
-            margin-top: 20px;
-            width: 90vw;
-            max-width: 1000px;
-            background: rgba(255, 255, 255, 0.05);
+            margin-top: 30px;
             padding: 20px;
-            border-radius: 8px;
-            backdrop-filter: blur(10px);
-            box-sizing: border-box;
+            background: rgba(255,255,255,0.05);
+            border-radius: 15px;
             display: flex;
             flex-direction: column;
             align-items: center;
+            gap: 20px;
         }
 
-        /* 1. 颜色按钮组 */
-        .color-group {
-            display: flex;
-            gap: 15px;
-            margin-bottom: 25px;
-        }
-
+        .color-group { display: flex; gap: 15px; }
         .color-btn {
-            width: 45px;
-            height: 45px;
-            border-radius: 50%;
-            border: 3px solid transparent;
-            cursor: pointer;
-            transition: transform 0.2s, border-color 0.2s;
-            box-sizing: border-box;
+            width: 40px; height: 40px; border-radius: 50%; border: 2px solid transparent; cursor: pointer;
         }
+        .color-btn.active { border-color: white; transform: scale(1.1); }
 
-        .color-btn:hover {
-            transform: scale(1.1);
-        }
-
-        .color-btn.active {
-            border-color: #fff;
-            transform: scale(1.1);
-        }
-
-        /* 2. 饱和度滑块 */
-        .slider-group {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            width: 100%;
-            max-width: 600px;
-        }
-
-        input[type=range] {
-            flex-grow: 1;
-            cursor: pointer;
-            accent-color: #f1f1f1; /* 滑块颜色 */
-        }
-
-        .value-display {
-            font-mono: monospace;
-            width: 60px;
-            text-align: right;
-            font-size: 1.1em;
-        }
-
+        .slider-container { display: flex; align-items: center; gap: 10px; width: 300px; }
+        input[type=range] { flex: 1; cursor: pointer; }
     </style>
 </head>
 <body>
 
     <div class="scene-container">
-        <div class="base-background"></div>
+        <img src="Cafe_Me.png" class="layer base-background">
+        
         <div class="cup-color-layer" id="cupColor"></div>
+        
         <div class="cup-texture-layer"></div>
     </div>
 
     <div class="controls-panel">
-        
         <div class="color-group">
-            <div class="color-btn active" style="background-color: hsl(0, 100%, 50%);" data-hue="0" title="红"></div>
-            <div class="color-btn" style="background-color: hsl(30, 100%, 50%);" data-hue="30" title="橙"></div>
-            <div class="color-btn" style="background-color: hsl(60, 100%, 50%);" data-hue="60" title="黄"></div>
-            <div class="color-btn" style="background-color: hsl(120, 100%, 50%);" data-hue="120" title="绿"></div>
-            <div class="color-btn" style="background-color: hsl(220, 100%, 50%);" data-hue="220" title="蓝"></div>
+            <div class="color-btn active" style="background-color: #ff4d4d;" data-hue="0"></div>
+            <div class="color-btn" style="background-color: #ffa64d;" data-hue="30"></div>
+            <div class="color-btn" style="background-color: #ffff4d;" data-hue="60"></div>
+            <div class="color-btn" style="background-color: #4dff4d;" data-hue="120"></div>
+            <div class="color-btn" style="background-color: #4d94ff;" data-hue="220"></div>
         </div>
 
-        <div class="slider-group">
-            <span>调节饱和度:</span>
-            <span>0%</span>
-            <input type="range" id="saturationSlider" min="0" max="100" value="50">
-            <span>100%</span>
-            <span class="value-display"><span id="satValue">50</span>%</span>
+        <div class="slider-container">
+            <span>调节饱和度</span>
+            <input type="range" id="satSlider" min="0" max="100" value="50">
+            <span id="satVal">50%</span>
         </div>
     </div>
 
     <script>
-        // 获取 DOM 元素
-        const cupColorLayer = document.getElementById('cupColor');
-        const saturationSlider = document.getElementById('saturationSlider');
-        const satValueDisplay = document.getElementById('satValue');
-        const colorButtons = document.querySelectorAll('.color-btn');
+        const slider = document.getElementById('satSlider');
+        const valText = document.getElementById('satVal');
+        const btns = document.querySelectorAll('.color-btn');
 
-        // 初始化状态
-        let currentHue = 0; 
-        let currentSaturation = 50;
-
-        // 更新杯子颜色的函数
-        function updateCupColor() {
-            // 通过 HSL 动态更新 CSS 变量
-            document.documentElement.style.setProperty('--current-hue', currentHue);
-            document.documentElement.style.setProperty('--current-saturation', currentSaturation);
-        }
-
-        // 1. 监听颜色按钮点击
-        colorButtons.forEach(btn => {
+        btns.forEach(btn => {
             btn.addEventListener('click', () => {
-                // 更新激活状态样式
-                document.querySelector('.color-btn.active').classList.remove('active');
+                document.querySelector('.active').classList.remove('active');
                 btn.classList.add('active');
-
-                // 获取数据色相
-                currentHue = btn.getAttribute('data-hue');
-                updateCupColor();
+                document.documentElement.style.setProperty('--current-hue', btn.dataset.hue);
             });
         });
 
-        // 2. 监听饱和度滑块
-        saturationSlider.addEventListener('input', (e) => {
-            currentSaturation = e.target.value;
-            satValueDisplay.textContent = currentSaturation;
-            updateCupColor();
+        slider.addEventListener('input', (e) => {
+            valText.textContent = e.target.value + '%';
+            document.documentElement.style.setProperty('--current-saturation', e.target.value);
         });
-
-        // 初始渲染
-        updateCupColor();
     </script>
 </body>
 </html>
